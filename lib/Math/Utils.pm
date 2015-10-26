@@ -199,6 +199,72 @@ sub log10
 	return wantarray? map(log($_)/$log10, @_): log($_[0])/$log10;
 }
 
+=head3 colmaj_index
+
+=cut
+
+sub colmaj_index
+{
+	my($dimensions, $coordinates, $offset) = @_;
+	my(@coord) = @$coordinates;
+	my(@dim) = @$dimensions;
+
+	my $nc = $#coord;
+	my $nd = $#dim;
+
+	if ($nd != $nc)
+	{
+		carp "Mis-matched dimensional sizes.";
+		return undef;
+	}
+
+	if (defined $offset)
+	{
+		$coord[$_] -= $$offset[$_] for (0..$nd);
+	}
+
+	my $idx = 0;
+	for my $j (reverse 0..$nd)
+	{
+		$idx *= $dim[$j];
+		$idx += $coord[$j];
+	}
+	return $idx;
+}
+
+=head3 rowmaj_index
+
+=cut
+
+sub rowmaj_index
+{
+	my($dimensions, $coordinates, $offset) = @_;
+	my(@coord) = @$coordinates;
+	my(@dim) = @$dimensions;
+
+	my $nc = $#coord;
+	my $nd = $#dim;
+
+	if ($nd != $nc)
+	{
+		carp "Mis-matched dimensional sizes.";
+		return undef;
+	}
+
+	if ($offset)
+	{
+		$coord[$_] -= $$offset[$_] for (0..$nd);
+	}
+
+	my $idx = 0;
+	for my $j (0..$nd)
+	{
+		$idx *= $dim[$j];
+		$idx += $coord[$j];
+	}
+	return $idx;
+}
+
 =head2 compare tag
 
 Create comparison functions for floating point (non-integer) numbers.
@@ -328,9 +394,9 @@ sub pl_evaluate
 	#
 	my @results = (pop @coefficients) x scalar @xvalues;
 
-	foreach my $c (reverse @coefficients)
+	for my $c (reverse @coefficients)
 	{
-		foreach my $j (0..$#xvalues)
+		for my $j (0..$#xvalues)
 		{
 			$results[$j] = $results[$j] * $xvalues[$j] + $c;
 		}
@@ -376,7 +442,7 @@ sub pl_dxevaluate
 		# Loop through the coefficients, except for
 		# the linear and constant terms.
 		#
-		foreach my $c (reverse @coefficients[2..$lastn])
+		for my $c (reverse @coefficients[2..$lastn])
 		{
 			$val = $val * $x + $c;
 			$d1val = $d1val * $x + ($c *= $n--);
