@@ -10,7 +10,9 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = (
 	compare => [ qw(generate_fltcmp generate_relational) ],
 	fortran => [ qw(log10 copysign) ],
-	utility => [ qw(log10 copysign flipsign sign) ],
+	utility => [ qw(log10 copysign flipsign sign
+			rmajor_index cmajor_index
+			index_rmajor index_cmajor) ],
 	polynomial => [ qw(pl_evaluate pl_dxevaluate
 			pl_add pl_sub pl_div pl_mult
 			pl_derivative pl_antiderivative) ],
@@ -199,11 +201,11 @@ sub log10
 	return wantarray? map(log($_)/$log10, @_): log($_[0])/$log10;
 }
 
-=head3 colmaj_index
+=head3 cmajor_index
 
 =cut
 
-sub colmaj_index
+sub cmajor_index
 {
 	my($dimensions, $coordinates, $offset) = @_;
 	my(@coord) = @$coordinates;
@@ -232,11 +234,11 @@ sub colmaj_index
 	return $idx;
 }
 
-=head3 rowmaj_index
+=head3 rmajor_index
 
 =cut
 
-sub rowmaj_index
+sub rmajor_index
 {
 	my($dimensions, $coordinates, $offset) = @_;
 	my(@coord) = @$coordinates;
@@ -264,6 +266,47 @@ sub rowmaj_index
 	}
 	return $idx;
 }
+
+sub index_cmajor
+{
+	my($dimensions, $index, $offset) = @_;
+	my @coord;
+
+	for $d (@$dimensions)
+	{
+		push @coord, $index % $d;
+		$index /= $d;
+	}
+
+	if (defined $offset)
+	{
+		my $n = $#$offset;
+		$coord[$_] += $$offset[$_] for (0..$n);
+	}
+
+	return [@coord];
+}
+
+sub index_rmajor
+{
+	my($dimensions, $index, $offset) = @_;
+	my @coord;
+
+	for $d (reverse @$dimensions)
+	{
+		push @coord, $index % $d;
+		$index /= $d;
+	}
+
+	if (defined $offset)
+	{
+		my $n = $#$offset;
+		$coord[$_] += $$offset[$_] for (0..$n);
+	}
+
+	return [reverse @coord];
+}
+
 
 =head2 compare tag
 
