@@ -3,6 +3,7 @@ package Math::Utils;
 use 5.010001;
 use strict;
 use warnings;
+use Carp;
 
 use Exporter;
 our @ISA = qw(Exporter);
@@ -10,7 +11,7 @@ our @ISA = qw(Exporter);
 our %EXPORT_TAGS = (
 	compare => [ qw(generate_fltcmp generate_relational) ],
 	fortran => [ qw(log10 copysign) ],
-	utility => [ qw(log10 copysign flipsign sign
+	utility => [ qw(log10 copysign flipsign sign moduli
 			rmajor_index cmajor_index
 			index_rmajor index_cmajor) ],
 	polynomial => [ qw(pl_evaluate pl_dxevaluate
@@ -51,6 +52,13 @@ Math::Utils - Useful mathematical functions not in Perl.
     # Change increment direction if goal is negative.
     #
     $incr = flipsign($incr, $goal);
+
+    #
+    # The remainders of n after successive divisions of b, or
+    # remainders after a set of divisions.
+    #
+    @rems = moduli($n, $b);
+    @sets = moduli($n, [3, 8]);
 
     #
     # Base 10 logarithm.
@@ -132,7 +140,6 @@ sub sign
 		($_[0] < 0)? -1: (($_[0] > 0)? 1: 0);
 }
 
-
 =head3 copysign()
 
     $ms = copysign($m, $n);
@@ -201,7 +208,78 @@ sub log10
 	return wantarray? map(log($_)/$log10, @_): log($_[0])/$log10;
 }
 
-=head3 cmajor_index
+=head3 moduli()
+
+With a simple divisor, returns the moduli of a number.
+
+    @rems = moduli(29, 3);   # Returns (1, 0, 0, 2)
+
+With an array of divisors, returns the modulus for each
+one in the array.
+
+    @coords = moduli(29, [6, 6]);   # Returns (5, 4)
+    @coords = moduli(29, [4, 9]);   # Returns (1, 7)
+
+=cut
+
+sub moduli
+{
+	my($n, $b) = @_;
+	my @coord;
+	use integer;
+
+	if (ref $b eq "ARRAY")
+	{
+		for my $d (@$b)
+		{
+			push @coord, $n % $d;
+			$n /= $d;
+		}
+	}
+	else
+	{
+		#
+		# It could happen. Someone might type \$x instead of $x.
+		#
+		$b = $$b if (ref $b eq "SCALAR");
+		return ($n) if ($b < 2);
+
+		for (;;)
+		{
+			unshift @coord, $n % $b;
+			$n /= $b;
+			last if ($n == 0);
+		}
+	}
+
+	return @coord;
+}
+
+=head3 cmajor_index()
+
+Returns the memory index of a column-major array. By default, the
+array is assumed to be zero-based.
+
+    $idx = cmajor_index([6, 6], [2, 3]);    # Returns 20
+
+In other words, in a 6x6 matrix, with coordinates [0..5, 0..5], then
+row 3, column 3, is the 20th by index in memory (or a single list).
+
+It is possible to adjust the coordinates of the zeroth index.
+For example, if the array is actually one-based, then in a 6x6 matrix, with
+coordinates [1..6, 1..6], then row 2, column 3, is the 13th by index
+in memory (or a single list).
+
+    $idx = cmajor_index([6, 6], [2, 3], [1, 1]);    # Returns 13
+
+Obviously, [0, 0] and [1, 1] both map to zero in zero-based and one-based
+matrices.
+
+    #
+    # Both indexes will be zero.
+    #
+    $idx0 = cmajor_index([6, 6], [0, 0]);
+    $idx1 = cmajor_index([6, 6], [1, 1], [1, 1]);
 
 =cut
 
@@ -234,7 +312,31 @@ sub cmajor_index
 	return $idx;
 }
 
-=head3 rmajor_index
+=head3 rmajor_index()
+
+Returns the memory index of a row-major array. By default, the
+array is assumed to be zero-based.
+
+    $idx = rmajor_index([6, 6], [2, 3]);    # Returns 15
+
+In other words, in a 6x6 matrix, with coordinates [0..5, 0..5], then
+row 3, column 3, is the 20th by index in memory (or a single list).
+
+It is possible to adjust the coordinates of the zeroth index.
+For example, if the array is actually one-based, then in a 6x6 matrix, with
+coordinates [1..6, 1..6], then row 2, column 3, is the 13th by index
+in memory (or a single list).
+
+    $idx = rmajor_index([6, 6], [2, 3], [1, 1]);    # Returns 8
+
+Obviously, [0, 0] and [1, 1] both map to zero in zero-based and one-based
+matrices.
+
+    #
+    # Both indexes will be zero.
+    #
+    $idx0 = rmajor_index([6, 6], [0, 0]);
+    $idx1 = rmajor_index([6, 6], [1, 1], [1, 1]);
 
 =cut
 
@@ -267,16 +369,14 @@ sub rmajor_index
 	return $idx;
 }
 
+=head3 index_cmajor()
+
+=cut
+
 sub index_cmajor
 {
 	my($dimensions, $index, $offset) = @_;
-	my @coord;
-
-	for $d (@$dimensions)
-	{
-		push @coord, $index % $d;
-		$index /= $d;
-	}
+	my @coord = moduli($index, $dimensions);
 
 	if (defined $offset)
 	{
@@ -287,16 +387,14 @@ sub index_cmajor
 	return [@coord];
 }
 
+=head3 index_rmajor()
+
+=cut
+
 sub index_rmajor
 {
 	my($dimensions, $index, $offset) = @_;
-	my @coord;
-
-	for $d (reverse @$dimensions)
-	{
-		push @coord, $index % $d;
-		$index /= $d;
-	}
+	my @coord = moduli($index, [reverse @$dimensions]);
 
 	if (defined $offset)
 	{
@@ -306,7 +404,6 @@ sub index_rmajor
 
 	return [reverse @coord];
 }
-
 
 =head2 compare tag
 
@@ -448,7 +545,7 @@ sub pl_evaluate
 	return wantarray? @results: $results[0];
 }
 
-=head3 pl_dxevaluate();
+=head3 pl_dxevaluate()
 
     ($y, $dy, $ddy) = pl_dxevaluate(\@coefficients, $x);
 
