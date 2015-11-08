@@ -235,6 +235,7 @@ sub moduli
 			push @coord, $n % $d;
 			$n /= $d;
 		}
+		return @coord;
 	}
 	else
 	{
@@ -242,17 +243,16 @@ sub moduli
 		# It could happen. Someone might type \$x instead of $x.
 		#
 		$b = $$b if (ref $b eq "SCALAR");
-		return ($n) if ($b < 2);
+		return ($n) if ($b < 2 or $n < $b);
 
 		for (;;)
 		{
 			unshift @coord, $n % $b;
 			$n /= $b;
-			last if ($n == 0);
+			return ($n, @coord) if ($n < $b);
 		}
 	}
-
-	return @coord;
+	return ();
 }
 
 =head3 cmajor_index()
@@ -370,6 +370,16 @@ sub rmajor_index
 }
 
 =head3 index_cmajor()
+
+Given the dimensions of a column-major matrix and an index into its memory,
+return the coordinates in the matrix.
+
+    $coord = index_cmajor([6, 6], 20 );    # Returns [2, 3]
+
+    $coord = index_cmajor([6, 6], 13, [1, 1]);    # Returns [2, 3]
+
+Zero will map to either [0, 0] or [1, 1] depending upon whether the matrix
+is zero-based or one-based.
 
 =cut
 
