@@ -213,12 +213,28 @@ sub log10
 With a simple divisor, returns the moduli of a number.
 
     @rems = moduli(29, 3);   # Returns (1, 0, 0, 2)
+    @digits = moduli(1899, 10);   # Returns (1, 8, 9, 9)
+
+The remainders are returned in a list from right to left.
+This order is convenient for convert-to-base operations.
 
 With an array of divisors, returns the modulus for each
 one in the array.
 
     @coords = moduli(29, [6, 6]);   # Returns (5, 4)
     @coords = moduli(29, [4, 9]);   # Returns (1, 7)
+    @coords3 = moduli(87, [8, 8, 3]);   # Returns (7, 2, 1)
+
+    #
+    # One hundred pence (before conversion to decimal currency)
+    # is 0 pounds, 8 shillings, and 4 pence.
+    #
+    @dsl = moduli(100, [12, 20, 240]);  # Returns (4, 8, 0)
+
+    #
+    # 29 bronze Knuts to a silver Sickle, 17 Sickles to a gold Galleon.
+    #
+    @ksg = moduli(100, [29, 17, 493]);  # Returns (13, 3, 0)
 
 =cut
 
