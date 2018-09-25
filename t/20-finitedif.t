@@ -2,10 +2,16 @@
 use 5.010001;
 use strict;
 use warnings;
-use Test::More tests => 4;
+use Test::More tests => 10;
 
 use Math::Utils qw(:polynomial :utility);
 
+#
+# Tests by creating polynomials from known sequences.
+# The sequences after the sum-of-powers tests are taken
+# from New Mathematical Diversions From Scientific American,
+# by Martin Gardner, chapter 20.
+#
 my($fc, $start, @seq);
 my($mult, $div, $p);
 
@@ -46,12 +52,6 @@ $fc = seq_difference(\@seq);
 ok(($mult == 1 and $div == 6 and join("", @$p) eq "0132"), "Sum of squares.");
 
 #
-# Rogue healing times per level (unfortunately, resulted in a messy polynomial).
-#
-#$start = 1;
-#@seq = ( 20, 18, 17, 14, 13, 10, 9, 8, 7, 4, 3, 2, 2);
-
-#
 # Sum of powers, p = 3
 #
 $start = 0;
@@ -62,9 +62,85 @@ $fc = seq_difference(\@seq);
 #diag("Cubics: $mult, $div, [", join(", ",@$p) . "]");
 ok(($mult == 1 and $div == 4 and join("", @$p) eq "00121"), "Sum of cubics");
 
+#
+# For each cut, what is the maximum number of pieces when slicing a circle.
+#
+$start = 0;
+@seq = (1, 2, 4, 7, 11);
+$fc = seq_difference(\@seq);
+($mult, $div, $p) = make_poly($fc, $start);
+
+#diag("Circle cutting problem: $mult, $div, [", join(", ",@$p) . "]");
+ok(($mult == 1 and $div == 2 and join(",", @$p) eq "2,1,1"), "Circle cutting problem");
+
+#
+# Number of pieces produced by n plane cuts through a cylinder.
+#
+$start = 0;
+@seq = (1, 2, 4, 8, 15);
+$fc = seq_difference(\@seq);
+($mult, $div, $p) = make_poly($fc, $start);
+
+#diag("Cylinder cutting problem: $mult, $div, [", join(", ",@$p) . "]");
+ok(($mult == 1 and $div == 6 and join(",", @$p) eq "6,5,0,1"), "Cylinder cutting problem");
+
+#
+# What is the maximum number of pieces produced by n simultaneous plane cuts
+# through a doughnut.
+#
+# There's ambiguity about what counts as a "piece" when there are zero cuts,
+# so start at one cut.
+#
+$start = 1;
+@seq = (2, 6, 13, 24);
+$fc = seq_difference(\@seq);
+($mult, $div, $p) = make_poly($fc, $start);
+
+#diag("Doughnut cutting problem: $mult, $div, [", join(", ",@$p) . "]");
+ok(($mult == 1 and $div == 6 and join(",", @$p) eq "0,8,3,1"), "Doughnut cutting problem");
+
+#
+# What are the maximum number of triangles one can create when drawing n lines on paper.
+#
+$start = 1;
+@seq = (0, 0, 1, 4, 10);
+$fc = seq_difference(\@seq);
+($mult, $div, $p) = make_poly($fc, $start);
+
+#diag("Triangle drawing problem: $mult, $div, [", join(", ",@$p) . "]");
+ok(($mult == 1 and $div == 6 and join(",", @$p) eq "0,2,-3,1"), "Triangle drawing problem");
+
+#
+# What are the maximum number of areas one can create by drawing n intersecting circles.
+#
+$start = 1;
+@seq = (2, 4, 8, 14);
+$fc = seq_difference(\@seq);
+($mult, $div, $p) = make_poly($fc, $start);
+
+#diag("Circle drawing problem: $mult, $div, [", join(", ",@$p) . "]");
+ok(($mult == 1 and $div == 1 and join(",", @$p) eq "2,-1,1"), "Circle drawing problem");
+
+#
+# What are the maximum number of regions of space one can create by through n intersecting spheres.
+#
+$start = 1;
+@seq = (2, 4, 8, 16);
+$fc = seq_difference(\@seq);
+($mult, $div, $p) = make_poly($fc, $start);
+
+#diag("Intersecting spheres problem: $mult, $div, [", join(", ",@$p) . "]");
+ok(($mult == 1 and $div == 3 and join(",", @$p) eq "0,8,-3,1"), "Intersecting spheres problem");
+
 #print_diff_triangle(seq_difference(\@seq, triangle => 1));
 #print "\nDifference column:\n", join(", ", @$fc), "\n";
 #print "Polynomial is: [", join(", ", @{$p}), "]/$m\n";
+
+#
+# Healing wait in turns per level in the game Rogue (unfortunately, resulted in a messy polynomial).
+#
+#$start = 1;
+#@seq = ( 20, 18, 17, 14, 13, 10, 9, 8, 7, 4, 3, 2);
 
 exit (0);
 
